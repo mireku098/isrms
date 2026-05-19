@@ -1,0 +1,891 @@
+# 📘 1. SYSTEM OVERVIEW
+
+## System Name:
+
+**Integrated Store & Requisition Management System (ISRMS)**
+
+## Objective:
+
+To digitize and automate:
+
+* Stock recording (Telecard / Stock Register)
+* Receiving of goods (SRA)
+* Issuing of goods (Requisition → Issue)
+* Approval workflows (multi-level signatures)
+* Real-time inventory tracking with alerts
+
+---
+
+# 🧩 2. CORE SYSTEM CONCEPT
+
+The system merges:
+
+* **Telecard (item ledger)**
+* **Stock Register**
+
+👉 Into a **single real-time inventory ledger system**
+
+Each item will have:
+
+* Running balance
+* History of inflow (receipts)
+* History of outflow (issues)
+
+---
+
+# 🧱 3. SYSTEM MODULES
+
+---
+
+## 📦 A. Item & Inventory Module
+
+### Purpose:
+
+Central registry of all store items.
+
+### Features:
+
+* Add/Edit/Delete items
+* Item categories (furniture, consumables, etc.)
+* Units (pieces, bags, etc.)
+* Minimum & maximum stock levels
+* Real-time balance tracking
+
+### Behavior:
+
+* Automatically updates on:
+
+  * Receiving (increase)
+  * Issuing (decrease)
+
+---
+
+## 📥 B. Receiving Module (SRA – Stores Received Advice)
+
+### Workflow:
+
+1. Supplier delivers goods with:
+
+   * Bill
+   * Waybill
+
+2. Storekeeper records receipt in system
+
+3. System generates **SRA (digital)**
+
+---
+
+### Approval Flow (STRICT SEQUENCE):
+
+```text
+Storekeeper → Internal Auditor → Principal
+```
+
+### Logic:
+
+* Storekeeper inputs received items
+* System notifies Internal Auditor
+* Auditor verifies and signs digitally
+* System notifies Principal
+* Principal signs
+* Only AFTER all signatures:
+  👉 SRA becomes printable
+
+---
+
+### Features:
+
+* Auto SRA number generation
+* Multi-signature workflow
+* Printable SRA document (PDF)
+* Audit trail of approvals
+
+---
+
+## 📤 C. Requisition Module
+
+### Users:
+
+* Departments / Requesters (limited access)
+
+### Features:
+
+* Create requisition:
+
+  * Select items
+  * Enter quantities
+* Submit request
+
+---
+
+### Approval Workflow:
+
+```text
+Requester → Principal → Storekeeper
+```
+
+### Logic:
+
+* Requester submits requisition
+* Principal receives notification
+* Principal approves/rejects
+* Storekeeper is notified after approval
+
+---
+
+## 📦 D. Issue Module (Storekeeper)
+
+### Process:
+
+1. Storekeeper views approved requisitions
+2. Checks available stock
+3. Enters:
+
+   * Quantity issued
+4. System:
+
+   * Deducts from inventory
+   * Records transaction
+
+---
+
+### Roles in Issue:
+
+* **Issuer** → Storekeeper
+* **Receiver/Collector** → Requesting user
+
+---
+
+### Features:
+
+* Partial or full fulfillment
+* Digital acknowledgment (receiver name)
+* Auto-update inventory
+* Issue records (linked to requisition)
+
+---
+
+## 📊 E. Inventory Ledger (Telecard Equivalent)
+
+### Purpose:
+
+Digital replacement of:
+
+* Telecard
+* Stock register
+
+---
+
+### For EACH item:
+
+* Opening balance
+* Quantity received
+* Quantity issued
+* Running balance
+
+---
+
+### Features:
+
+* Real-time updates
+* Transaction history
+* Filter by date range
+* Export/print ledger
+
+---
+
+## 📈 F. Reporting Module
+
+### Reports:
+
+* Stock balance report
+* Item ledger report
+* Issued items report
+* Received items report
+* Low stock / out-of-stock report
+
+---
+
+### Special Feature:
+
+* “Click of a button” → generate full stock position
+
+---
+
+## 🔔 G. Notification & Alert System
+
+### Triggers:
+
+* Requisition submitted → notify Principal
+* Requisition approved → notify Storekeeper
+* SRA created → notify Auditor
+* Auditor signs → notify Principal
+* Low stock → notify Storekeeper
+
+---
+
+## ⚠️ H. Stock Control System
+
+### Features:
+
+* Minimum stock level
+* Maximum stock level
+
+### Alerts:
+
+* Low stock warning
+* Out-of-stock alert
+
+---
+
+## 👤 I. User & Role Management
+
+### Roles & Permissions:
+
+| Role                   | Permissions                        |
+| ---------------------- | ---------------------------------- |
+| Admin                  | Full system control                |
+| Storekeeper            | Manage inventory, SRA, issue items |
+| Internal Auditor       | Verify and sign SRA only           |
+| Principal              | Approve requisitions & SRA         |
+| Requester (Department) | Create requisitions only           |
+
+---
+
+# 🗄️ 4. DATABASE ARCHITECTURE
+
+---
+
+## Core Tables:
+
+### Users
+
+* id
+* name
+* role
+* department
+
+---
+
+### Items
+
+* id
+* name
+* category
+* unit
+* min_stock
+* max_stock
+
+---
+
+### Inventory Ledger
+
+* id
+* item_id
+* transaction_type (RECEIVE / ISSUE)
+* quantity
+* balance_after
+* reference_id (SRA / ISSUE)
+* date
+
+---
+
+### SRA (Receipts)
+
+* id
+* supplier_details
+* created_by
+* status (pending, approved)
+* signed_storekeeper
+* signed_auditor
+* signed_principal
+* date
+
+---
+
+### SRA_Items
+
+* sra_id
+* item_id
+* quantity
+
+---
+
+### Requisitions
+
+* id
+* requested_by
+* status (pending, approved, rejected)
+* approved_by
+* date
+
+---
+
+### Requisition_Items
+
+* requisition_id
+* item_id
+* quantity_requested
+
+---
+
+### Issues
+
+* id
+* requisition_id
+* issued_by
+* received_by
+* date
+
+---
+
+### Issue_Items
+
+* issue_id
+* item_id
+* quantity_issued
+
+---
+
+# 🧭 5. SYSTEM WORKFLOW SUMMARY
+
+---
+
+## 📥 Receiving Flow:
+
+```text
+Storekeeper inputs → Auditor signs → Principal signs → SRA printable → Inventory updated
+```
+
+---
+
+## 📤 Requisition & Issue Flow:
+
+```text
+Requester submits → Principal approves → Storekeeper issues → Inventory updated
+```
+
+---
+
+## 🔄 Inventory Logic:
+
+```text
+Receiving → ADD stock  
+Issuing → SUBTRACT stock  
+System maintains real-time balance
+```
+
+---
+
+# 🖥️ 6. USER INTERFACE STRUCTURE
+
+---
+
+## Dashboards:
+
+### Storekeeper Dashboard:
+
+* Stock overview
+* Pending approvals
+* Low stock alerts
+
+---
+
+### Principal Dashboard:
+
+* Pending requisitions
+* Pending SRA approvals
+
+---
+
+### Auditor Dashboard:
+
+* Pending SRA verification
+
+---
+
+### Requester Dashboard:
+
+* Create requisition
+* View request status
+
+---
+
+# ⚙️ 7. SYSTEM ARCHITECTURE
+
+---
+
+## Architecture Type:
+
+**3-Tier Architecture**
+
+### 1. Presentation Layer
+
+* Web interface (browser-based)
+
+### 2. Application Layer
+
+* Business logic
+* Workflow engine
+* Approval system
+
+### 3. Data Layer
+
+* Relational database
+
+---
+
+# 💻 8. RECOMMENDED TECHNOLOGIES
+
+---
+
+## Backend:
+
+* **Django (Python)** OR **Laravel (PHP)**
+
+## Frontend:
+
+* HTML, CSS, JavaScript
+* Tailwind CSS (optional)
+
+## Database:
+
+* PostgreSQL (recommended)
+* MySQL (alternative)
+
+---
+
+
+# ☁️ 9. DEPLOYMENT OPTIONS
+
+---
+
+## Option 1: Cloud-Based
+
+* Hosted on VPS or cloud (AWS, DigitalOcean)
+* Accessible anywhere
+
+## Option 2: Local Network (On-Premise)
+
+* Hosted within organization network
+* No internet dependency
+
+---
+
+# 🔐 10. SECURITY & CONTROL
+
+---
+
+### Features:
+
+* Role-based access control
+* Secure login system
+* Action logs (audit trail)
+* Data validation
+
+---
+
+# 🧠 11. KEY SYSTEM BEHAVIORS (CRITICAL)
+
+---
+
+* No SRA can be printed **without all signatures**
+* No item can be issued **without approval**
+* Inventory updates are **automatic and real-time**
+* Each item maintains a **continuous ledger**
+* System provides **instant stock visibility**
+* Alerts trigger when stock is low or finished
+
+---
+
+# ✅ FINAL SUMMARY
+
+This system is essentially:
+
+* A **workflow-driven inventory system**
+* With **strict approval chains**
+* And **real-time stock intelligence**
+
+It replaces:
+
+* Paper SRA
+* Manual telecards
+* Physical requisition forms
+
+👉 With a **fully traceable, digital, auditable system**
+
+
+
+# 📘 INTEGRATED STORE & REQUISITION MANAGEMENT SYSTEM (ISRMS)
+
+## SYSTEM DOCUMENTATION
+
+---
+
+# 1. TERMS OF REFERENCE (ToR)
+
+## 1.1 Background
+
+The current store management process relies on manual documentation such as Stores Received Advice (SRA), requisition forms, and stock registers (telecards). This approach leads to inefficiencies, delays, lack of real-time visibility, and limited accountability.
+
+## 1.2 Objective
+
+To design and implement a digital system that automates and integrates:
+
+* Inventory management
+* Requisition workflows
+* Receiving and issuing processes
+* Multi-level approval and verification
+* Real-time stock tracking and reporting
+
+## 1.3 Purpose
+
+The system will:
+
+* Replace manual records with a centralized digital platform
+* Improve transparency and accountability
+* Provide real-time stock visibility
+* Enforce approval workflows
+* Reduce errors and fraud
+
+---
+
+# 2. SCOPE OF THE SYSTEM
+
+## 2.1 In Scope
+
+The system shall:
+
+* Manage all store items (add, update, track)
+* Digitize Stores Received Advice (SRA)
+* Enable requisition submission and approval
+* Facilitate item issuing based on approved requisitions
+* Maintain a real-time inventory ledger (telecard equivalent)
+* Support multi-user roles with defined permissions
+* Generate reports and alerts
+
+## 2.2 Out of Scope
+
+* Supplier procurement management (beyond receiving)
+* Financial accounting integration (optional future phase)
+* External payment systems
+
+---
+
+# 3. FUNCTIONAL REQUIREMENTS
+
+## 3.1 User Management
+
+* Create and manage users
+* Assign roles:
+
+  * Admin
+  * Storekeeper
+  * Internal Auditor
+  * Principal
+  * Requester (Department/User)
+* Role-based access control
+
+---
+
+## 3.2 Item Management
+
+* Add, edit, delete items
+* Define:
+
+  * Item name
+  * Category
+  * Unit of measurement
+  * Minimum and maximum stock levels
+* Maintain item catalog
+
+---
+
+## 3.3 Receiving Module (SRA)
+
+### Features:
+
+* Record items received from suppliers
+* Capture supplier details, bill, and waybill
+* Generate digital SRA
+
+### Approval Workflow:
+
+1. Storekeeper records receipt
+2. Internal Auditor verifies and signs
+3. Principal approves and signs
+
+### Rules:
+
+* SRA cannot be printed until all approvals are completed
+* System must log all approvals
+
+---
+
+## 3.4 Requisition Module
+
+### Features:
+
+* Requesters submit item requests
+* Select items and quantities
+* Submit requisition
+
+### Workflow:
+
+1. Requester submits requisition
+2. Principal reviews and approves/rejects
+3. Storekeeper receives approved request
+
+---
+
+## 3.5 Issue Module
+
+### Features:
+
+* Storekeeper views approved requisitions
+* Confirms available stock
+* Issues items
+
+### Roles:
+
+* Issuer: Storekeeper
+* Receiver: Requester
+
+### Behavior:
+
+* Deduct issued quantity from inventory
+* Allow partial or full fulfillment
+* Record receiver details
+
+---
+
+## 3.6 Inventory Ledger (Telecard)
+
+### Features:
+
+* Maintain real-time ledger per item
+* Record:
+
+  * Quantity received
+  * Quantity issued
+  * Running balance
+* Provide transaction history
+
+---
+
+## 3.7 Reporting Module
+
+### Reports:
+
+* Current stock levels
+* Item transaction history
+* Issued items report
+* Received items report
+* Low stock alerts
+
+---
+
+## 3.8 Notification System
+
+* Notify Principal of requisitions
+* Notify Storekeeper after approval
+* Notify Auditor for SRA verification
+* Notify Principal for final SRA approval
+* Alert for low or out-of-stock items
+
+---
+
+# 4. NON-FUNCTIONAL REQUIREMENTS
+
+## 4.1 Performance
+
+* System should respond within 2–3 seconds for standard operations
+* Support concurrent users
+
+## 4.2 Security
+
+* Secure authentication (login system)
+* Role-based access control
+* Data validation and input sanitization
+* Audit logs for all actions
+
+## 4.3 Reliability
+
+* Ensure data consistency and integrity
+* Prevent duplicate transactions
+* Backup and recovery mechanisms
+
+## 4.4 Usability
+
+* Simple and intuitive interface
+* Accessible via web browser
+* Minimal training required
+
+## 4.5 Scalability
+
+* Ability to support multiple stores/locations
+* Expandable for future modules
+
+## 4.6 Availability
+
+* System should be available 99% of the time (if cloud-based)
+
+---
+
+# 5. DELIVERABLES
+
+## 5.1 Software Deliverables
+
+* Fully functional web-based system
+* User authentication module
+* Inventory and workflow modules
+* Reporting dashboard
+
+## 5.2 Documentation
+
+* System documentation (this document)
+* User manual
+* Technical documentation (API, database)
+
+## 5.3 Outputs
+
+* Printable SRA documents
+* Inventory reports
+* Requisition and issue reports
+
+## 5.4 Deployment
+
+* Hosted system (cloud or local server)
+* Configured database
+* User access setup
+
+---
+
+# 6. DATABASE SCHEMA DOCUMENT
+
+---
+
+## 6.1 Users Table
+
+| Field      | Type         | Description       |
+| ---------- | ------------ | ----------------- |
+| id         | Integer (PK) | Unique identifier |
+| name       | String       | Full name         |
+| role       | String       | User role         |
+| department | String       | Department name   |
+| email      | String       | Login email       |
+| password   | String       | Hashed password   |
+
+---
+
+## 6.2 Items Table
+
+| Field     | Type         | Description         |
+| --------- | ------------ | ------------------- |
+| id        | Integer (PK) | Unique identifier   |
+| name      | String       | Item name           |
+| category  | String       | Item category       |
+| unit      | String       | Unit of measurement |
+| min_stock | Integer      | Minimum threshold   |
+| max_stock | Integer      | Maximum threshold   |
+
+---
+
+## 6.3 Inventory Ledger Table
+
+| Field            | Type         | Description               |
+| ---------------- | ------------ | ------------------------- |
+| id               | Integer (PK) | Unique identifier         |
+| item_id          | FK           | Reference to item         |
+| transaction_type | String       | RECEIVE / ISSUE           |
+| quantity         | Integer      | Quantity moved            |
+| balance_after    | Integer      | Balance after transaction |
+| reference_id     | Integer      | Link to SRA or Issue      |
+| date             | DateTime     | Transaction date          |
+
+---
+
+## 6.4 SRA Table
+
+| Field              | Type         | Description        |
+| ------------------ | ------------ | ------------------ |
+| id                 | Integer (PK) | Unique identifier  |
+| supplier_details   | String       | Supplier info      |
+| created_by         | FK           | Storekeeper        |
+| status             | String       | Pending / Approved |
+| signed_storekeeper | Boolean      | Signature status   |
+| signed_auditor     | Boolean      | Signature status   |
+| signed_principal   | Boolean      | Signature status   |
+| date               | DateTime     | Created date       |
+
+---
+
+## 6.5 SRA_Items Table
+
+| Field    | Type         | Description       |
+| -------- | ------------ | ----------------- |
+| id       | Integer (PK) | Unique identifier |
+| sra_id   | FK           | Reference to SRA  |
+| item_id  | FK           | Reference to item |
+| quantity | Integer      | Quantity received |
+
+---
+
+## 6.6 Requisitions Table
+
+| Field        | Type         | Description                   |
+| ------------ | ------------ | ----------------------------- |
+| id           | Integer (PK) | Unique identifier             |
+| requested_by | FK           | Requester                     |
+| status       | String       | Pending / Approved / Rejected |
+| approved_by  | FK           | Principal                     |
+| date         | DateTime     | Request date                  |
+
+---
+
+## 6.7 Requisition_Items Table
+
+| Field              | Type         | Description              |
+| ------------------ | ------------ | ------------------------ |
+| id                 | Integer (PK) | Unique identifier        |
+| requisition_id     | FK           | Reference to requisition |
+| item_id            | FK           | Reference to item        |
+| quantity_requested | Integer      | Requested quantity       |
+
+---
+
+## 6.8 Issues Table
+
+| Field          | Type         | Description        |
+| -------------- | ------------ | ------------------ |
+| id             | Integer (PK) | Unique identifier  |
+| requisition_id | FK           | Linked requisition |
+| issued_by      | FK           | Storekeeper        |
+| received_by    | FK           | Receiver           |
+| date           | DateTime     | Issue date         |
+
+---
+
+## 6.9 Issue_Items Table
+
+| Field           | Type         | Description        |
+| --------------- | ------------ | ------------------ |
+| id              | Integer (PK) | Unique identifier  |
+| issue_id        | FK           | Reference to issue |
+| item_id         | FK           | Reference to item  |
+| quantity_issued | Integer      | Quantity issued    |
+
+---
+
+# ✅ CONCLUSION
+
+This system provides:
+
+* A fully digitized store management workflow
+* Real-time inventory tracking (telecard integration)
+* Strict approval and accountability structure
+* Automated reporting and alerts
+
+It ensures operational efficiency, transparency, and control in store management processes.
+
+---
